@@ -22,12 +22,18 @@ const { theme, problems } = makeColors({
 // No tint: the panels keep their own color, which follows the light or dark mode. No blur: the pixels stay sharp.
 const LOOK: ThemeSetArgs = {
   colors: theme,
-  backdrop: { scene: SCENE, glass: { blur: 0, opacity: 0.6 } },
+  backdrop: { scene: SCENE, glass: { blur: 0, opacity: 0.45 } },
 }
 
 const isOn = async ($: EngineInterface) => (await $.store.get(SWITCH)) !== 'off'
 
+const isOurs = (look: ThemeSetArgs) =>
+  look.backdrop !== undefined && 'scene' in look.backdrop && look.backdrop.scene === SCENE
+
 export const register: Register = on => {
+  // A set made while no app is attached draws nothing, so it is made again at the next message.
+  let isUndrawn = false
+
   on('session.start', async ($, e, next) => {
     const unpainted = problems.find(line => line.startsWith("Desktop won't paint"))
 
@@ -42,10 +48,34 @@ export const register: Register = on => {
     const started = await next(e)
 
     if (await isOn($)) {
-      await $.theme.set(LOOK)
+      isUndrawn = !(await $.theme.set(LOOK)).isDrawn
     }
 
     return started
+  })
+
+  on('theme.set', ($, e, next) => {
+    if (!isOurs(e)) {
+      isUndrawn = false
+    }
+
+    return next(e)
+  })
+
+  on('theme.clear', ($, e, next) => {
+    isUndrawn = false
+
+    return next(e)
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    const entered = await next(e)
+
+    if (isUndrawn && (await isOn($))) {
+      isUndrawn = !(await $.theme.set(LOOK)).isDrawn
+    }
+
+    return entered
   })
 
   on('command.run', { command: COMMAND }, async ($, e) => {

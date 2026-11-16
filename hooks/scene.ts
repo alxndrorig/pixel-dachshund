@@ -42,6 +42,24 @@ const walkSeconds = ({ w }: Layout) => (w + REACH) * TICK
 
 export const loopSeconds = (layout: Layout) => layout.passes.length * (walkSeconds(layout) + REST)
 
+// The app can draw a backdrop with every animation switched off (its background animation setting, reduced motion,
+// software compositing). The dog then stands where this puts it, clear of the sidebar, and moves on at the next redraw.
+const still = ({ w, passes }: Layout, at: number, dogWidth: number) => {
+  const span = (w + REACH) * TICK + REST
+  const index = Math.min(passes.length - 1, Math.floor(at / span))
+  const pass = passes[index]
+
+  if (pass === undefined) {
+    return 'none'
+  }
+
+  const done = Math.min(1, (at - index * span) / (span - REST))
+  const left = Math.round(w * 0.2)
+  const x = Math.round(left + (pass.isFlipped ? 1 - done : done) * Math.max(0, w - dogWidth - 4 - left))
+
+  return pass.isFlipped ? `translate(${x + dogWidth}px,${pass.y}px) scale(-1,1)` : `translate(${x}px,${pass.y}px) scale(1,1)`
+}
+
 // `at` is the place in the loop, in seconds: a redraw restarts CSS animations, so each draw names its own phase.
 export const scene = (layout: Layout, at: number, extra: number) => {
   const { w, h, passes } = layout
@@ -64,10 +82,11 @@ export const scene = (layout: Layout, at: number, extra: number) => {
     .join('')
   const first = passes[0]
   const delay = `-${at.toFixed(2)}s`
+  const length = Math.max(0, Math.min(MAX_EXTRA, Math.round(extra)))
   const css =
-    `.run{animation:run ${loop.toFixed(2)}s linear infinite ${delay}}` +
+    `.run{transform:${still(layout, at, DOG_W + length)};animation:run ${loop.toFixed(2)}s linear infinite ${delay}}` +
     `.la,.ta{animation:fa ${(TICK * 4).toFixed(2)}s step-end infinite ${delay}}` +
-    `.lb,.tb{animation:fb ${(TICK * 4).toFixed(2)}s step-end infinite ${delay}}` +
+    `.lb,.tb{opacity:0;animation:fb ${(TICK * 4).toFixed(2)}s step-end infinite ${delay}}` +
     `.ta,.tb{animation-duration:${(TICK * 6).toFixed(2)}s}` +
     `@keyframes fa{0%{opacity:1}50%{opacity:0}}@keyframes fb{0%{opacity:0}50%{opacity:1}}` +
     `@keyframes run{${frames}100%{transform:${first === undefined ? 'none' : from(first)}}}`
@@ -75,6 +94,6 @@ export const scene = (layout: Layout, at: number, extra: number) => {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" ` +
     `preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges"><style>${css}</style>` +
-    `<g class="run" opacity="${STRENGTH}">${dog(Math.max(0, Math.min(MAX_EXTRA, Math.round(extra))))}</g></svg>`
+    `<g class="run" opacity="${STRENGTH}">${dog(length)}</g></svg>`
   )
 }

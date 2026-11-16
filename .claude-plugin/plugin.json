@@ -1,6 +1,6 @@
 {
   "name": "pixel-dachshund",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Warm light and dark theme with a pixel dachshund trotting behind the conversation",
   "author": { "name": "alxndrorig" },
   "types": "./types/index.d.ts"
