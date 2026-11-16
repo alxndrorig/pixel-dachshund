@@ -1,0 +1,6 @@
+{
+  "name": "pixel-dachshund",
+  "description": "A pixel dachshund look for Claude Code",
+  "owner": { "name": "alxndrorig" },
+  "plugins": [{ "name": "pixel-dachshund", "source": "./" }]
+}
