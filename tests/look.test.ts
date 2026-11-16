@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { WIDE, loopSeconds, scene } from '../hooks/scene.js'
+import { WIDE, extraFor, loopSeconds, scene } from '../hooks/scene.js'
 
 type Look = { backdrop?: { scene?: string } }
 
@@ -60,7 +60,12 @@ test('a set that no app drew is made again at the next message, once', async ($,
   expect(seen.map(look => look.backdrop?.scene)).toEqual(['dachshund', 'dachshund'])
 })
 
-test('the dog grows with the answers and the loop keeps its length', async () => {
+test('the dog is as long as the context window is full', async () => {
+  expect(extraFor(undefined)).toEqual(undefined)
+  expect([0, 50, 100, 140].map(extraFor)).toEqual([0, 12, 24, 24])
+})
+
+test('a longer dog is drawn longer and the loop keeps its length', async () => {
   const short = scene(WIDE, 0, 0)
   const long = scene(WIDE, 0, 10)
 

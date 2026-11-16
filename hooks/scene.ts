@@ -38,7 +38,11 @@ export const TALL: Layout = {
   ],
 }
 
-const walkSeconds = ({ w }: Layout) => (w + REACH) * TICK
+// How many cells longer the dog is for a context window filled to `percent`.
+export const extraFor = (percent: number | undefined) =>
+  percent === undefined ? undefined : Math.round((Math.max(0, Math.min(100, percent)) / 100) * MAX_EXTRA)
+
+const walkSeconds =({ w }: Layout) => (w + REACH) * TICK
 
 export const loopSeconds = (layout: Layout) => layout.passes.length * (walkSeconds(layout) + REST)
 

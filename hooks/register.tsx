@@ -3,14 +3,26 @@ import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
 import { makeColors } from './make-colors.js'
 import { DARK, LIGHT, ROLES } from './palette.js'
-import { TALL, WIDE, loopSeconds, scene } from './scene.js'
-import { MAX_EXTRA } from './sprite.js'
+import { TALL, WIDE, extraFor, loopSeconds, scene } from './scene.js'
 
 const START = Math.random()
 const SCENE = 'dachshund'
 const COMMAND = 'dachshund'
 const SWITCH = 'look'
-const answers = atom({ plugin: 'pixel-dachshund', key: 'answers' } as const, 0)
+// `turns` only makes each answer a redraw, so a dog that stands still moves on.
+const walk = atom({ plugin: 'pixel-dachshund', key: 'walk' } as const, { extra: 0, turns: 0 })
+
+// A host that cannot tell the usage must not cost the session its look: the dog keeps the length it had.
+const measure = async ($: EngineInterface, isTurn: boolean) => {
+  let extra: number | undefined
+
+  try {
+    extra = extraFor((await $.session.usage()).context.percent)
+  } catch {
+    extra = undefined
+  }
+  await update($, walk, now => ({ extra: extra ?? now.extra, turns: now.turns + (isTurn ? 1 : 0) }))
+}
 
 const { theme, problems } = makeColors({
   label: 'Pixel Dachshund',
@@ -47,6 +59,7 @@ export const register: Register = on => {
     // Set after the mods beneath have started, so a theme one of them sets does not land on top.
     const started = await next(e)
 
+    await measure($, false)
     if (await isOn($)) {
       isUndrawn = !(await $.theme.set(LOOK)).isDrawn
     }
@@ -94,7 +107,7 @@ export const register: Register = on => {
 
   on('turn.complete', async ($, e, next) => {
     if (e.agentId === undefined && !e.isAborted) {
-      await update($, answers, count => Math.min(MAX_EXTRA, count + 1))
+      await measure($, true)
     }
 
     return next(e)
@@ -110,6 +123,6 @@ export const register: Register = on => {
     const loop = loopSeconds(layout)
     const at = (Date.now() / 1000 + START * loop) % loop
 
-    return <Svg source={scene(layout, at, await read($, answers))} alt="A pixel dachshund trotting across the page" />
+    return <Svg source={scene(layout, at, (await read($, walk)).extra)} alt="A pixel dachshund trotting across the page" />
   })
 }

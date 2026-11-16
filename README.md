@@ -2,7 +2,9 @@
 
 A look for Claude Code in the desktop and mobile apps: a warm palette in light and dark mode, and a pixel dachshund that trots across the page behind the conversation. The terminal and editors draw no look, so the mod does nothing there.
 
-The dog crosses the window along seven lanes, one cell at a time, in either direction. It grows one cell longer with every finished answer, up to 24 cells, and starts short again in a new session.
+The dog crosses the window along seven lanes, one cell at a time, in either direction. It is as long as the context window is full: short in a fresh session, 24 cells longer at a full window, and short again after a compaction.
+
+Where the app has background animation switched off, the dog stands still in the chat column and has moved on after each answer.
 
 ## Commands
 
